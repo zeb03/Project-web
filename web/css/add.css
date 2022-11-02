@@ -1,0 +1,30 @@
+div {
+    position: relative;
+    float: left;
+}
+
+#div_container {
+    width: 80%;
+    height: 900px;
+    border: solid gray;
+    margin-left: 10%;
+    float: left;
+    background: honeydew;
+}
+
+#tbl_fruit {
+    width: 50%;
+    margin: 10% 20%;
+    table-layout: fixed;
+}
+
+#tbl_fruit, #tbl_fruit tr, #tbl_fruit th, #tbl_fruit td {
+    border: 1px solid gray;
+    border-collapse: collapse;
+    text-align: center;
+    line-height: 28px;
+}
+
+.w20{
+    width: 20%;
+}
