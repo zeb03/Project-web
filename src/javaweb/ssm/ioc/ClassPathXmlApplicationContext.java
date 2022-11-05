@@ -1,5 +1,6 @@
 package javaweb.ssm.ioc;
 
+import javaweb.ssm.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -22,11 +23,18 @@ import java.util.Map;
  */
 public class ClassPathXmlApplicationContext implements BeanFactor {
     private Map<String, Object> beanMap = new HashMap<>();
-
-    public ClassPathXmlApplicationContext() {
+    private String path = "applicationContext.xml";
+    public ClassPathXmlApplicationContext(){
+        this("applicationContext.xml");//不能写path，因为在调用构造器之前，还没有加载类
+    }
+    //可以将path写在web配置文件中
+    public ClassPathXmlApplicationContext(String path) {
+        if (StringUtils.isEmpty(path)){
+            throw new RuntimeException("IOC容器的配置文件没有指定");
+        }
         try {
             //获取document对象，得到配置文件的bean标签，并将标签中的元素（id-class）保存至Map中
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("applicationContext.xml");
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(path);
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             Document document = documentBuilder.parse(inputStream);

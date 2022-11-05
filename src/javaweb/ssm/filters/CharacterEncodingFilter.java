@@ -14,9 +14,9 @@ import java.io.IOException;
  */
 
 
-@WebFilter(urlPatterns = {"*.do"}, initParams = {@WebInitParam(name = "encoding", value = "utf-8")})
+@WebFilter(urlPatterns = {"*.do"}, initParams = {@WebInitParam(name = "encoding", value = "utf8")})
 public class CharacterEncodingFilter implements Filter {
-    private String encoding = "utf-8";
+    private String encoding = "utf8";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -28,7 +28,7 @@ public class CharacterEncodingFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        ((HttpServletRequest) servletRequest).setCharacterEncoding("utf-8");
+        ((HttpServletRequest) servletRequest).setCharacterEncoding(encoding);
         filterChain.doFilter(servletRequest, servletResponse);
     }
 

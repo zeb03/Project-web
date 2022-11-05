@@ -1,15 +1,14 @@
 package javaweb.ssm.myspringmvc;
 
+import javaweb.fruit.exceptions.DispatcherException;
 import javaweb.ssm.ioc.BeanFactor;
-import javaweb.ssm.ioc.ClassPathXmlApplicationContext;
 import javaweb.ssm.util.StringUtils;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -24,13 +23,27 @@ import java.lang.reflect.Parameter;
 public class DispatcherServlet extends ViewBaseServlet {
 
     private BeanFactor beanFactor;
+
     public DispatcherServlet() {
-        beanFactor = new ClassPathXmlApplicationContext();
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        //req.setCharacterEncoding("utf8");
+    public void init() throws ServletException {
+        //若写在构造器里，会出错（获取不到ServletContext）
+        //原因是 在编译此类时，会先编译构造器，而此时ServletContext还未被初始化
+        //init()方法则默认会在第一次发送请求时才会调用
+        super.init();
+        ServletContext servletContext = getServletContext();
+        Object beanFactorObj = servletContext.getAttribute("beanFactor");
+        if (beanFactorObj != null) {
+            beanFactor = (BeanFactor) beanFactorObj;
+        } else {
+            throw new RuntimeException("beanFactor获取失败");
+        }
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) {
         String servletPath = req.getServletPath();
         servletPath = servletPath.substring(1);
         int lastDotIndex = servletPath.lastIndexOf(".do");
@@ -44,27 +57,27 @@ public class DispatcherServlet extends ViewBaseServlet {
         //通过反射代替switch
         try {
             Method[] methods = controllerBeanObj.getClass().getDeclaredMethods();
-            for (Method method: methods){
-                if (operate.equals(method.getName())){
+            for (Method method : methods) {
+                if (operate.equals(method.getName())) {
                     //通过反射获取参数名称，通过请求获取每个参数的值
                     Parameter[] parameters = method.getParameters();
                     Object[] parametersValue = new Object[parameters.length];
                     for (int i = 0; i < parameters.length; i++) {
                         Parameter parameter = parameters[i];
                         String parameterName = parameter.getName();
-                        if ("req".equals(parameterName)){
+                        if ("req".equals(parameterName)) {
                             parametersValue[i] = req;
-                        }else if ("resp".equals(parameterName)){
+                        } else if ("resp".equals(parameterName)) {
                             parametersValue[i] = resp;
-                        }else if ("session".equals(parameterName)){
+                        } else if ("session".equals(parameterName)) {
                             parametersValue[i] = req.getSession();
-                        }else {
+                        } else {
                             String parameterValue = req.getParameter(parameterName);
                             //注意获取到的值为string
                             String typeName = parameter.getType().getName();
                             Object parameterObj = parameterValue;
-                            if (parameterObj != null){
-                                if ("java.lang.Integer".equals(typeName)){
+                            if (parameterObj != null) {
+                                if ("java.lang.Integer".equals(typeName)) {
                                     parameterObj = Integer.parseInt(parameterValue);
                                 }
                             }
@@ -79,23 +92,18 @@ public class DispatcherServlet extends ViewBaseServlet {
                     //视图处理(解决重定向和渲染)
                     if (methodReturnObj != null) {
                         String returnStr = (String) methodReturnObj;
-                        if (returnStr.startsWith("redirect:")){
+                        if (returnStr.startsWith("redirect:")) {
                             String redirectStr = returnStr.substring("redirect:".length());
                             resp.sendRedirect(redirectStr);
-                        }else {
-                            super.processTemplate(returnStr,req,resp);
+                        } else {
+                            super.processTemplate(returnStr, req, resp);
                         }
                     }
                 }
             }
-
-            /*else {
-                throw new RuntimeException("operate不合法");
-            }*/
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            throw new DispatcherException("dispatcher have problems");
         }
     }
 
