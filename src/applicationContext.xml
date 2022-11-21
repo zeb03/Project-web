@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE beans[
+        <!ELEMENT beans (bean*)>
+        <!ELEMENT bean (property*)>
+        <!ELEMENT property (#PCDATA)>
+
+        <!ATTLIST bean id ID #REQUIRED>
+        <!ATTLIST bean class CDATA #IMPLIED>
+        <!ATTLIST property name CDATA #IMPLIED>
+        <!ATTLIST property ref IDREF #IMPLIED>
+        ]>
+
 <beans>
-    <!-- 将id与class对应 -->
     <bean id="fruitDAO" class="javaweb.fruit.dao.impl.FruitDAOImpl"/>
-    <bean id="fruit" class="javaweb.fruit.controller.FruitController">
-        <!-- 添加property属性，name是类的属性，ref是依赖的bean（调用bean id）-->
-        <property name="fruitService" ref="fruitService"/>
-    </bean>
     <bean id="fruitService" class="javaweb.fruit.service.imp.FruitServiceImp">
         <property name="fruitDAO" ref="fruitDAO"/>
+    </bean>
+    <bean id="fruit" class="javaweb.fruit.controller.FruitController">
+        <property name="fruitService" ref="fruitService"/>
     </bean>
 </beans>

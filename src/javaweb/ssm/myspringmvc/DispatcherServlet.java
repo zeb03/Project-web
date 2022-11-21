@@ -1,6 +1,6 @@
 package javaweb.ssm.myspringmvc;
 
-import javaweb.fruit.exceptions.DispatcherException;
+
 import javaweb.ssm.ioc.BeanFactor;
 import javaweb.ssm.util.StringUtils;
 
@@ -9,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -18,6 +19,7 @@ import java.lang.reflect.Parameter;
  */
 /*
 拦截请求，获取请求名称，分配到对应类（使用xml配置文件）
+需要修改
  */
 @WebServlet("*.do")
 public class DispatcherServlet extends ViewBaseServlet {
@@ -51,7 +53,7 @@ public class DispatcherServlet extends ViewBaseServlet {
         Object controllerBeanObj = beanFactor.getBean(servletPath);//根据id获取到对应的类
 
         String operate = req.getParameter("operate");
-        if (!StringUtils.isNotEmpty(operate)) {
+        if (StringUtils.isEmpty(operate)) {
             operate = "index";
         }
         //通过反射代替switch
@@ -92,10 +94,21 @@ public class DispatcherServlet extends ViewBaseServlet {
                     //视图处理(解决重定向和渲染)
                     if (methodReturnObj != null) {
                         String returnStr = (String) methodReturnObj;
+                        if(StringUtils.isEmpty(returnStr)){
+                            return ;
+                        }
                         if (returnStr.startsWith("redirect:")) {
                             String redirectStr = returnStr.substring("redirect:".length());
                             resp.sendRedirect(redirectStr);
-                        } else {
+                        }else if (returnStr.startsWith("json:")){
+                            resp.setCharacterEncoding("utf-8");
+                            resp.setContentType("application/json;charset=utf-8");
+                            String jsonStr = returnStr.substring("json:".length());
+                            PrintWriter out = resp.getWriter();
+                            out.print(jsonStr);
+                            out.flush();
+                        }
+                        else {
                             super.processTemplate(returnStr, req, resp);
                         }
                     }
@@ -103,7 +116,7 @@ public class DispatcherServlet extends ViewBaseServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new DispatcherException("dispatcher have problems");
+            throw new RuntimeException("dispatcher have problems");
         }
     }
 
